@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PNL Card Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --green: #4ade80;
+        --green-dark: #22c55e;
+        --red: #f43f5e;
+        --red-dark: #e11d48;
+        --blue-accent: #3b82f6;
+        --bg-dark: #0a0a0f;
+        --text-primary: #ffffff;
+        --text-secondary: rgba(255, 255, 255, 0.7);
+        --glass-bg: rgba(20, 20, 30, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.1);
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg-dark);
+        min-height: 100vh;
+        color: var(--text-primary);
+        overflow: hidden;
+      }
+
+      .background {
+        position: fixed;
+        inset: 0;
+        background-image: url('https://fakepnlgenerator.fun/assets/axiom-web-bg.jpg');
+        background-size: cover;
+        background-position: center;
+        z-index: -1;
+      }
+
+      .platform-tabs {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        z-index: 100;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .platform-tabs.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      .tab-btn:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .tab-btn.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+      }
+
+      .controls-panel {
+        position: fixed;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(10, 10, 12, 0.7);
+        backdrop-filter: blur(16px);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        width: 280px;
+        z-index: 100;
+        overflow-y: auto;
+        max-height: 90vh;
+        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      }
+
+      .controls-panel.hidden {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-50%) translateX(-20px);
+      }
+
+      .controls-panel h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+      }
+
+      .input-group {
+        margin-bottom: 16px;
+      }
+
+      .input-group input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px 14px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: 'Geist Mono', monospace;
+        transition: all 0.2s ease;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .input-group input::placeholder {
+        color: rgba(255, 255, 255, 0.2);
+      }
+
+      .calculated-values {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 16px;
+      }
+
+      .calc-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .calc-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .calc-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      .calc-value {
+        font-size: 14px;
+        font-weight: 600;
+        font-family: 'Geist Mono', monospace;
+      }
+
+      .calc-value.profit {
+        color: var(--green);
+      }
+
+      .calc-value.loss {
+        color: var(--red);
+      }
+
+      .hide-ui-btn {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 12px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      .hide-ui-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .hide-ui-btn kbd {
+        font-size: 11px;
+        color: var(--text-secondary);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: inherit;
+      }
+
+      .center-layout {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .card-wrapper {
+        position: relative;
+        width: 840px;
+        height: 570px;
+      }
+
+      .pnl-card {
+        position: relative;
+        width: 840px;
+        height: 570px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+        z-index: 2;
+        background: linear-gradient(135deg, #1a9b91, #126b64);
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+
+      .card-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+        pointer-events: none;
+      }
+
+      .card-content {
+        position: absolute;
+        inset: 0;
+        display: block;
+        z-index: 2;
+      }
+
+      .simulation-watermark {
+        position: absolute;
+        z-index: 10;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-18deg);
+        padding: 10px 18px;
+        border: 2px solid rgba(255, 255, 255, 0.85);
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.68);
+        color: #fff;
+        font-family: 'Geist Mono', monospace;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: center;
+        white-space: nowrap;
+        text-shadow: 0 1px 3px #000;
+        pointer-events: none;
+      }
+
+      .user-handle {
+        position: absolute;
+        left: 98.17px;
+        top: 452.35px;
+        width: 287.39px;
+        height: 46.13px;
+        font-family: 'Geist', sans-serif;
+        font-weight: 400;
+        font-size: 38px;
+        line-height: 46.13px;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+      }
+
+      .progress-section {
+        position: absolute;
+        left: 50.85px;
+        top: 186.98px;
+        width: 321.83px;
+        height: 65.14px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .pnl-number-container {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 4px;
+      }
+
+      .pnl-number-text {
+        font-size: 59px;
+        font-weight: 700;
+        color: #000000;
+        white-space: nowrap;
+        font-family: 'Geist', sans-serif;
+        letter-spacing: -0.02em;
+        line-height: 65.14px;
+      }
+
+      .abs-value {
+        position: absolute;
+        font-family: 'Geist', sans-serif;
+        font-weight: 500;
+        font-size: 26px;
+        color: #ffffff;
+        white-space: nowrap;
+        width: 161.67px;
+        height: 28.42px;
+        line-height: 28.42px;
+        display: flex;
+        align-items: center;
+        letter-spacing: 0em;
+      }
+
+      .val-percentage {
+        left: 301.73px;
+        top: 296.9px;
+      }
+
+      .val-percentage.profit {
+        color: #2edda8;
+      }
+
+      .val-percentage.loss {
+        color: #ec397a;
+      }
+
+      .val-invested {
+        left: 299.73px;
+        top: 337.9px;
+      }
+
+      .val-position {
+        left: 299.73px;
+        top: 378.9px;
+      }
+
+      .val-coin-name {
+        left: 33.73px;
+        top: 122px;
+        width: 272.1px;
+        height: 45.99px;
+        font-size: 42px;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        line-height: 45.99px;
+      }
+
+      .profile-pic-display {
+        position: absolute;
+        left: 33.78px;
+        top: 449.78px;
+        width: 47.46px;
+        height: 47.46px;
+        border-radius: 3px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .padre-logo {
+        position: absolute;
+        left: 85.2px;
+        top: 77.2px;
+        width: 182px;
+        height: 40px;
+        object-fit: contain;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .pnl-card[data-platform='padre'] .not-padre-hidden {
+        display: none !important;
+      }
+
+      .pnl-card[data-platform='padre'] .val-coin-name {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 44.5px;
+        letter-spacing: -0.025em;
+        left: 84.8px;
+        top: 247.5px;
+      }
+
+      .pnl-card[data-platform='padre'] .progress-section {
+        left: 75px;
+        top: 319.5px;
+        width: 252.5px;
+      }
+
+      .pnl-card[data-platform='padre'] .pnl-number-text {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 62.7px;
+        letter-spacing: 0;
+      }
+
+      .pnl-card[data-platform='padre'] .pnl-number-container.profit .pnl-number-text {
+        color: #3cd287;
+      }
+
+      .pnl-card[data-platform='padre'] .pnl-number-container.loss .pnl-number-text {
+        color: #e73a44;
+      }
+
+      .padre-lbl {
+        display: none;
+        position: absolute;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 19px;
+        color: #808080;
+        top: 407.1px;
+      }
+
+      .pnl-card[data-platform='padre'] .padre-lbl {
+        display: block;
+      }
+
+      .lbl-invested { left: 85.5px; }
+      .lbl-position { left: 234.8px; }
+      .lbl-pnl { left: 385.8px; }
+
+      .pnl-card[data-platform='padre'] .val-invested,
+      .pnl-card[data-platform='padre'] .val-position,
+      .pnl-card[data-platform='padre'] .val-percentage {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 25.5px;
+        top: 433.6px;
+        width: auto;
+        height: auto;
+        line-height: normal;
+        text-shadow: none;
+        display: block;
+      }
+
+      .pnl-card[data-platform='padre'] .val-invested {
+        left: 81.4px;
+        color: #ffffff;
+      }
+
+      .pnl-card[data-platform='padre'] .val-position {
+        left: 231.6px;
+        color: #ffffff;
+      }
+
+      .pnl-card[data-platform='padre'] .val-percentage {
+        left: 381.7px;
+      }
+
+      .pnl-card[data-platform='padre'] .val-percentage.profit {
+        color: #3cd287;
+      }
+
+      .pnl-card[data-platform='padre'] .val-percentage.loss {
+        color: #e73a44;
+      }
+
+      .padre-sol-val {
+        display: none;
+        position: absolute;
+        font-family: 'Inter', sans-serif;
+        font-weight: 400;
+        font-size: 19px;
+        color: #808080;
+        top: 473.4px;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .pnl-card[data-platform='padre'] .padre-sol-val {
+        display: flex;
+      }
+
+      .padre-sol-val::before {
+        content: '';
+        display: block;
+        width: 16px;
+        height: 14px;
+        background-color: currentColor;
+        -webkit-mask: url('https://fakepnlgenerator.fun/assets/solana-symbol.png') no-repeat center / contain;
+        mask: url('https://fakepnlgenerator.fun/assets/solana-symbol.png') no-repeat center / contain;
+        flex-shrink: 0;
+      }
+
+      .val-invested-sol { left: 93.7px; }
+      .val-position-sol { left: 243.9px; }
+      .val-pnl-sol { left: 394.1px; }
+      .val-pnl-sol.profit { color: #3cd287; }
+      .val-pnl-sol.loss { color: #e73a44; }
+
+      .pnl-card[data-platform='padre'] .profile-pic-display,
+      .pnl-card[data-platform='padre'] .user-handle {
+        display: none !important;
+      }
+
+      .image-selector-module {
+        background: transparent;
+        border: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        width: 840px;
+      }
+
+      .image-selector-module.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .selector-top-row {
+        display: flex;
+        gap: 8px;
+        height: 90px;
+      }
+
+      .gallery-wrapper {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .gallery-wrapper::-webkit-scrollbar {
+        display: none;
+      }
+
+      .thumbnail-gallery {
+        display: flex;
+        gap: 4px;
+        height: 100%;
+      }
+
+      .thumbnail {
+        width: 160px;
+        height: 100%;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+        opacity: 0.8;
+        position: relative;
+      }
+
+      .thumbnail:hover {
+        opacity: 1;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .thumbnail.active {
+        border-color: var(--blue-accent);
+        opacity: 1;
+      }
+
+      .thumbnail.custom {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .upload-btn {
+        width: 140px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: rgba(255, 255, 255, 0.9);
+        gap: 4px;
+        flex-shrink: 0;
+      }
+
+      .upload-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .upload-btn svg {
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .upload-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1.2;
+      }
+
+      .upload-btn span {
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .upload-btn small {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .selector-bottom-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .ca-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 13px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .ca-box:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .ca-label {
+        font-weight: 600;
+        color: var(--green);
+      }
+
+      .ca-value {
+        font-family: 'Geist Mono', monospace;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+      }
+
+      .ca-box svg {
+        color: rgba(255, 255, 255, 0.4);
+        flex-shrink: 0;
+      }
+
+      .ca-box.copied {
+        border-color: var(--green);
+      }
+
+      .ca-box.copied .ca-value {
+        color: var(--green);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+
+      .action-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+
+      .ripple-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .ripple-rect {
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        transform: scale(1);
+        animation: ripple 3s infinite cubic-bezier(0.1, 0, 0.3, 1);
+      }
+
+      @keyframes ripple {
+        0% {
+          transform: scale(1);
+          opacity: 0.4;
+          border-width: 1px;
+        }
+
+        100% {
+          transform: scale(1.08);
+          opacity: 0;
+          border-width: 0px;
+        }
+      }
+
+      @media (max-width: 1000px) {
+        .center-layout {
+          transform: translate(-50%, -50%) scale(0.8);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .center-layout {
+          transform: translate(-50%, -50%) scale(0.55);
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background"></div>
+
+    <div class="platform-tabs" id="platformTabs">
+      <button class="tab-btn active" data-platform="axiom">Axiom</button>
+      <button class="tab-btn" data-platform="padre">Padre/Terminal</button>
+    </div>
+
+    <div class="controls-panel" id="controlsPanel">
+      <h2>PNL Card Generator</h2>
+
+      <div class="input-group">
+        <label for="investedAmount">Invested Amount ($)</label>
+        <input type="number" id="investedAmount" placeholder="100" value="100" step="0.01" />
+      </div>
+
+      <div class="input-group">
+        <label for="currentPosition">Current Position ($)</label>
+        <input type="number" id="currentPosition" placeholder="150" value="150" step="0.01" />
+      </div>
+
+      <div class="input-group">
+        <label for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" placeholder="@username" value="@user" />
+      </div>
+
+      <div class="input-group">
+        <label for="coinNameInput">Coin Name</label>
+        <input type="text" id="coinNameInput" placeholder="Coin Name" value="$AXIOM" />
+      </div>
+
+      <div class="input-group">
+        <label for="profilePicInput">Profile Picture</label>
+        <input type="file" id="profilePicInput" accept="image/*" />
+      </div>
+
+      <div class="calculated-values">
+        <div class="calc-item">
+          <span class="calc-label">Profit/Loss:</span>
+          <span class="calc-value" id="profitDisplay">+$50.00</span>
+        </div>
+        <div class="calc-item">
+          <span class="calc-label">Percentage:</span>
+          <span class="calc-value" id="percentageDisplay">+50.00%</span>
+        </div>
+      </div>
+
+      <button class="hide-ui-btn" id="hideUIBtn">
+        <span>Hide UI</span>
+        <kbd>ESC to show</kbd>
+      </button>
+    </div>
+
+    <div class="center-layout">
+      <div class="card-wrapper">
+        <div class="ripple-container" id="rippleContainer">
+          <div class="ripple-rect"></div>
+        </div>
+
+        <div class="pnl-card" id="pnlCard" data-platform="axiom">
+          <img src="https://fakepnlgenerator.fun/assets/axiom-bg-green.png" alt="" aria-hidden="true" class="card-bg" id="cardBg" />
+
+          <div class="card-content">
+            <img id="profilePicDisplay" class="profile-pic-display not-padre-hidden" src="" alt="Profile" style="display: none;" />
+            <img id="padreLogo" class="padre-logo" src="https://fakepnlgenerator.fun/assets/terminal-logo.png" alt="Terminal Logo" style="display: none;" />
+
+            <span id="coinNameDisplay" class="abs-value val-coin-name">$AXIOM</span>
+
+            <div class="progress-section">
+              <div class="pnl-number-container" id="pnlContainer">
+                <span class="pnl-number-text" id="pnlText">+$50.00</span>
+              </div>
+            </div>
+
+            <span class="padre-lbl lbl-invested">Invested</span>
+            <span class="padre-lbl lbl-position">Position</span>
+            <span class="padre-lbl lbl-pnl">PNL</span>
+
+            <div class="values-section">
+              <span id="percentageVal" class="abs-value val-percentage">+50.00%</span>
+              <span id="investedVal" class="abs-value val-invested">$100.00</span>
+              <span id="positionVal" class="abs-value val-position">$150.00</span>
+
+              <span id="investedSolVal" class="padre-sol-val val-invested-sol">0.00 SOL</span>
+              <span id="positionSolVal" class="padre-sol-val val-position-sol">0.00 SOL</span>
+              <span id="pnlSolVal" class="padre-sol-val val-pnl-sol">0.00 SOL</span>
+            </div>
+
+            <span class="user-handle not-padre-hidden" id="usernameDisplay">@user</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="image-selector-module" id="imageSelectorModule">
+        <div class="selector-top-row">
+          <div class="gallery-wrapper">
+            <div class="thumbnail-gallery" id="thumbnailGallery"></div>
+          </div>
+
+          <label class="upload-btn" for="customImageUpload">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 10l5-6 5 6" />
+              <path d="M17 14l-5 6-5-6" />
+              <path d="M12 4v16" />
+            </svg>
+            <div class="upload-text">
+              <span>Change upload</span>
+              <small>any size</small>
+            </div>
+          </label>
+          <input type="file" id="customImageUpload" accept="image/*" hidden />
+        </div>
+
+        <div class="selector-bottom-row">
+          <button class="ca-box" id="caBox" type="button">
+            <span class="ca-label">CA</span>
+            <span class="ca-value" id="caValue">coming soon</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+
+          <div class="action-buttons">
+            <button class="action-btn" id="downloadBtn" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download
+            </button>
+            <button class="action-btn" id="copyBtn" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const platformButtons = document.querySelectorAll('.tab-btn');
+      const pnlCard = document.getElementById('pnlCard');
+      const controlsPanel = document.getElementById('controlsPanel');
+      const imageSelectorModule = document.getElementById('imageSelectorModule');
+      const platformTabs = document.getElementById('platformTabs');
+      const hideUIBtn = document.getElementById('hideUIBtn');
+      const profilePicInput = document.getElementById('profilePicInput');
+      const customImageUpload = document.getElementById('customImageUpload');
+      const profilePicDisplay = document.getElementById('profilePicDisplay');
+      const usernameInput = document.getElementById('usernameInput');
+      const usernameDisplay = document.getElementById('usernameDisplay');
+      const coinNameInput = document.getElementById('coinNameInput');
+      const coinNameDisplay = document.getElementById('coinNameDisplay');
+      const pnlText = document.getElementById('pnlText');
+      const investedAmountInput = document.getElementById('investedAmount');
+      const currentPositionInput = document.getElementById('currentPosition');
+      const profitDisplay = document.getElementById('profitDisplay');
+      const percentageDisplay = document.getElementById('percentageDisplay');
+      const percentageVal = document.getElementById('percentageVal');
+      const investedVal = document.getElementById('investedVal');
+      const positionVal = document.getElementById('positionVal');
+      const pnlSolVal = document.getElementById('pnlSolVal');
+      const investedSolVal = document.getElementById('investedSolVal');
+      const positionSolVal = document.getElementById('positionSolVal');
+      const cardBg = document.getElementById('cardBg');
+      const pnlContainer = document.getElementById('pnlContainer');
+      const caBox = document.getElementById('caBox');
+      const caValue = document.getElementById('caValue');
+      const cardStyle = document.querySelector('style').textContent;
+      const selectedPresets = { axiom: null, padre: null };
+      const customBackgrounds = { axiom: null, padre: null };
+      let activePlatform = 'axiom';
+
+      cardBg.addEventListener('error', () => {
+        cardBg.style.display = 'none';
+        pnlCard.style.background = pnlCard.dataset.platform === 'padre'
+          ? 'linear-gradient(135deg, #111827, #1f2937)'
+          : 'linear-gradient(135deg, #1a9b91, #126b64)';
+      });
+
+      const formatCurrency = (value) => {
+        const isNeg = value < 0;
+        const abs = Math.abs(value);
+        const sign = isNeg ? '-$' : '+$';
+        return `${sign}${abs.toFixed(2)}`;
+      };
+
+      const formatPercent = (value) => {
+        const isNeg = value < 0;
+        const abs = Math.abs(value);
+        const sign = isNeg ? '-' : '+';
+        return `${sign}${abs.toFixed(2)}%`;
+      };
+
+      const updateCardBackground = (platform) => {
+        const presetLabel = selectedPresets[platform];
+        const preset = [...document.querySelectorAll('.thumbnail')].find((thumb) => thumb.dataset.preset === presetLabel);
+        document.querySelectorAll('.thumbnail').forEach((thumb) => {
+          thumb.classList.toggle('active', thumb.dataset.preset === presetLabel || (!presetLabel && platform === 'axiom' && thumb.dataset.preset === 'Green'));
+        });
+
+        if (customBackgrounds[platform]) {
+          cardBg.src = customBackgrounds[platform];
+          cardBg.style.display = 'block';
+          pnlCard.style.background = '';
+        } else if (preset) {
+          cardBg.style.display = 'none';
+          pnlCard.style.background = preset.dataset.background;
+        } else if (platform === 'axiom') {
+          cardBg.src = 'https://fakepnlgenerator.fun/assets/axiom-bg-green.png';
+          cardBg.style.display = 'block';
+          pnlCard.style.background = '';
+        } else if (platform === 'padre') {
+          cardBg.src = 'https://cards.padre.gg/backgrounds/pnl_terminal.png';
+          cardBg.style.display = 'block';
+          pnlCard.style.background = '';
+        } else {
+          cardBg.src = 'https://cards.padre.gg/backgrounds/pnl_terminal.png';
+          cardBg.style.display = 'block';
+          pnlCard.style.background = '';
+        }
+      };
+
+      const setPlatform = (platform) => {
+        if (!['axiom', 'padre'].includes(platform)) return;
+        activePlatform = platform;
+        pnlCard.setAttribute('data-platform', platform);
+
+        platformButtons.forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.platform === platform);
+          btn.setAttribute('aria-pressed', String(btn.dataset.platform === platform));
+        });
+
+        document.getElementById('padreLogo').style.display = platform === 'padre' ? 'block' : 'none';
+        updateCardBackground(platform);
+      };
+
+      function updateCard() {
+        const invested = Number(investedAmountInput.value || 0);
+        const current = Number(currentPositionInput.value || 0);
+        const profit = current - invested;
+        const percent = invested === 0 ? 0 : (profit / invested) * 100;
+        const isProfit = profit >= 0;
+
+        const pnlTextValue = formatCurrency(profit);
+        pnlText.textContent = pnlTextValue;
+        pnlContainer.classList.toggle('profit', isProfit);
+        pnlContainer.classList.toggle('loss', !isProfit);
+
+        const percentageValue = formatPercent(percent);
+        percentageDisplay.textContent = percentageValue;
+        percentageVal.textContent = percentageValue;
+        percentageVal.classList.toggle('profit', isProfit);
+        percentageVal.classList.toggle('loss', !isProfit);
+
+        const investedText = `$${invested.toFixed(2)}`;
+        const positionText = `$${current.toFixed(2)}`;
+        investedVal.textContent = investedText;
+        positionVal.textContent = positionText;
+        profitDisplay.textContent = `${isProfit ? '+' : '-'}$${Math.abs(profit).toFixed(2)}`;
+        profitDisplay.classList.toggle('profit', isProfit);
+        profitDisplay.classList.toggle('loss', !isProfit);
+
+        investedSolVal.textContent = `${(invested / 128.85).toFixed(2)} SOL`;
+        positionSolVal.textContent = `${(current / 128.85).toFixed(2)} SOL`;
+        pnlSolVal.textContent = `${(profit / 128.85).toFixed(2)} SOL`;
+        pnlSolVal.classList.toggle('profit', isProfit);
+        pnlSolVal.classList.toggle('loss', !isProfit);
+
+        usernameDisplay.textContent = usernameInput.value || '@user';
+        coinNameDisplay.textContent = coinNameInput.value || '$AXIOM';
+      }
+
+      function readImage(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('The selected image could not be read.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function handleProfilePic(file) {
+        if (!file) return;
+        profilePicDisplay.src = await readImage(file);
+        profilePicDisplay.style.display = 'block';
+      }
+
+      async function handleCustomBackground(file) {
+        if (!file) return;
+        customBackgrounds[activePlatform] = await readImage(file);
+        selectedPresets[activePlatform] = null;
+        updateCardBackground(activePlatform);
+      }
+
+      function buildGallery() {
+        const gallery = document.getElementById('thumbnailGallery');
+        const presets = [
+          { label: 'Green', bg: 'linear-gradient(135deg, #1a9b91, #126b64)' },
+          { label: 'Red', bg: 'linear-gradient(135deg, #a4314b, #76152e)' },
+          { label: 'Blue', bg: 'linear-gradient(135deg, #3262aa, #193d7c)' },
+          { label: 'Purple', bg: 'linear-gradient(135deg, #7544b2, #4b2684)' }
+        ];
+
+        presets.forEach((preset, idx) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'thumbnail' + (idx === 0 ? ' active' : '');
+          button.setAttribute('aria-label', preset.label);
+          button.dataset.preset = preset.label;
+          button.dataset.background = preset.bg;
+          button.style.background = preset.bg;
+          button.addEventListener('click', () => {
+            selectedPresets[activePlatform] = preset.label;
+            customBackgrounds[activePlatform] = null;
+            updateCardBackground(activePlatform);
+          });
+          gallery.appendChild(button);
+        });
+      }
+
+      function downloadCard() {
+        const card = pnlCard.cloneNode(true);
+        card.style.width = '840px';
+        card.style.height = '570px';
+        card.style.position = 'relative';
+        card.style.transform = 'none';
+        const markup = new XMLSerializer().serializeToString(card);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="840" height="570" viewBox="0 0 840 570"><foreignObject width="840" height="570"><div xmlns="http://www.w3.org/1999/xhtml"><style>${cardStyle}</style>${markup}</div></foreignObject></svg>`;
+        const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'pnl-simulation.svg';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      async function copyCardText() {
+        const text = `${coinNameDisplay.textContent} ${pnlText.textContent} ${profitDisplay.textContent}`;
+        try {
+          await navigator.clipboard.writeText(text);
+          caBox.classList.add('copied');
+          caValue.textContent = 'copied';
+          setTimeout(() => {
+            caBox.classList.remove('copied');
+            caValue.textContent = 'coming soon';
+          }, 1200);
+        } catch (error) {
+          console.warn('Clipboard copy failed:', error);
+        }
+      }
+
+      hideUIBtn.addEventListener('click', () => {
+        controlsPanel.classList.toggle('hidden');
+        imageSelectorModule.classList.toggle('hidden');
+        platformTabs.classList.toggle('hidden');
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          controlsPanel.classList.remove('hidden');
+          imageSelectorModule.classList.remove('hidden');
+          platformTabs.classList.remove('hidden');
+        }
+      });
+
+      platformButtons.forEach((button) => {
+        button.addEventListener('click', () => setPlatform(button.dataset.platform));
+      });
+
+      [investedAmountInput, currentPositionInput, usernameInput, coinNameInput].forEach((element) => {
+        element.addEventListener('input', updateCard);
+      });
+
+      profilePicInput.addEventListener('change', async (event) => {
+        try {
+          await handleProfilePic(event.target.files[0]);
+        } catch (error) {
+          window.alert(error.message);
+        }
+      });
+      customImageUpload.addEventListener('change', async (event) => {
+        try {
+          await handleCustomBackground(event.target.files[0]);
+        } catch (error) {
+          window.alert(error.message);
+        }
+      });
+      document.getElementById('downloadBtn').addEventListener('click', downloadCard);
+      document.getElementById('copyBtn').addEventListener('click', copyCardText);
+      caBox.addEventListener('click', copyCardText);
+
+      buildGallery();
+      setPlatform('axiom');
+      updateCard();
+    </script>
+  </body>
+</html>
